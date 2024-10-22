@@ -14,13 +14,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Create HTTP and HTTPS servers
 const httpServer = http.createServer(app);
-const httpsServer = https.createServer({
+/*const httpsServer = https.createServer({
   key: fs.readFileSync('./server.key', 'utf8'),
   cert: fs.readFileSync('./server.crt', 'utf8')
-}, app);
+}, app);*/
 
 const httpIo = socketIo(httpServer);
-const httpsIo = socketIo(httpsServer);
+//const httpsIo = socketIo(httpsServer);
 
 
 
@@ -30,11 +30,11 @@ let connectionCount = 0;
 
 // Connection handling
 httpIo.on('connection', handleConnection);
-httpsIo.on('connection', handleConnection);
+//httpsIo.on('connection', handleConnection);
 
 // Start servers
 httpServer.listen(80, () => console.log('HTTP Server listening on port 80'));
-httpsServer.listen(443, () => console.log('HTTPS Server listening on port 443'));
+//httpsServer.listen(443, () => console.log('HTTPS Server listening on port 443'));
 
 // Handle socket connections
 function handleConnection(socket) {
