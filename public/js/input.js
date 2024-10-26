@@ -1,116 +1,112 @@
-(function() {
-  var pressedKeys = {};
+// input.js - Client-side module for handling keyboard input
+(function () {
+  // Object to keep track of pressed keys
+  const pressedKeys = {};
 
+  // Key mappings for easy reference
+  const keyMappings = {
+      32: { name: 'RUN', elementId: 'key-space' }, // Space for Run
+      37: { name: 'LEFT', elementId: 'key-left' },
+      38: { name: 'JUMP', elementId: 'key-up' }, // Up for Jump
+      39: { name: 'RIGHT', elementId: 'key-right' },
+      40: { name: 'DOWN', elementId: 'key-down' },
+      88: { name: 'JUMP', elementId: 'key-x' }, // X for Jump
+      90: { name: 'RUN', elementId: 'key-z' } // Z for Run
+  };
+
+  /**
+   * Sets the status of a key (pressed or released)
+   * @param {KeyboardEvent} event - The keyboard event object
+   * @param {boolean} status - The status of the key (true for pressed, false for released)
+   */
   function setKey(event, status) {
-    var code = event.keyCode;
-    var key;
-    var keyElementId;
+      const { keyCode } = event; // Destructure keyCode from event
+      const keyData = keyMappings[keyCode]; // Get key data from mappings
+      const key = keyData ? keyData.name : String.fromCharCode(keyCode); // Get key name or use char code
 
-    switch (code) {
-      case 32:
-        key = 'SPACE';
-        keyElementId = 'key-space';
-        break;
-      case 37:
-        key = 'LEFT';
-        keyElementId = 'key-left';
-        break;
-      case 38:
-        key = 'UP';
-        keyElementId = 'key-up';
-        break;
-      case 39:
-        key = 'RIGHT';
-        keyElementId = 'key-right';
-        break;
-      case 40:
-        key = 'DOWN';
-        keyElementId = 'key-down';
-        break;
-      case 88:
-        key = 'JUMP';
-        keyElementId = 'key-x';
-        break;
-      case 90:
-        key = 'RUN';
-        keyElementId = 'key-z';
-        break;
-      default:
-        key = String.fromCharCode(code);
-    }
+      // Update pressed keys status
+      pressedKeys[key] = status;
 
-    pressedKeys[key] = status;
-
-    var keyElement = document.getElementById(keyElementId);
-    if (keyElement) {
-      if (status) {
-        keyElement.classList.add('pressed');
-        // Move the player based on the button pressed
-        movePlayer(key);
-      } else {
-        keyElement.classList.remove('pressed');
-      }
-    }
+      // Update the visual representation of the key
+      updateKeyVisual(keyData?.elementId, status);
+      if (status) movePlayer(key);
   }
 
+  /**
+   * Updates the visual representation of the key pressed
+   * @param {string} elementId - The DOM element ID for the key
+   * @param {boolean} status - The status of the key (pressed or released)
+   */
+  function updateKeyVisual(elementId, status) {
+      if (!elementId) return; // Exit if no elementId provided
+
+      const keyElement = document.getElementById(elementId);
+      if (keyElement) {
+          keyElement.classList.toggle('pressed', status); // Add/remove pressed class based on status
+      }
+  }
+
+  /**
+   * Moves the player based on the pressed key
+   * @param {string} key - The key that was pressed
+   */
   function movePlayer(key) {
-    // Get the player object from the game.js file
-    var player = window.player;
+      const player = window.player; // Access the player object from the global scope
 
-    // Perform player movements based on the button pressed
-    switch (key) {
-      case 'LEFT':
-        player.moveLeft();
-        break;
-      case 'RIGHT':
-        player.moveRight();
-        break;
-      case 'JUMP':
-        player.jump();
-        break;
-      case 'RUN':
-        player.run();
-        break;
-      case 'DOWN':
-        player.crouch();
-        break;
-      default:
-        break;
-    }
+      // Map keys to player actions
+      const actions = {
+          'LEFT': player.moveLeft,
+          'RIGHT': player.moveRight,
+          'JUMP': player.jump,
+          'RUN': player.run,
+          'DOWN': player.crouch,
+          'UP': player.climb // Optional: Make player climb
+      };
+
+      const action = actions[key];
+      if (action) action.call(player); // Execute the action if it exists
   }
 
-  document.addEventListener('keydown', function(e) {
-    setKey(e, true);
+  // Event listener for keydown events
+  document.addEventListener('keydown', (e) => setKey(e, true));
+
+  // Event listener for keyup events
+  document.addEventListener('keyup', (e) => setKey(e, false));
+
+  // Event listener for when the window loses focus
+  window.addEventListener('blur', () => {
+      resetKeys(); // Reset pressed keys
   });
 
-  document.addEventListener('keyup', function(e) {
-    setKey(e, false);
-  });
+  /**
+   * Resets all pressed keys and visual representations
+   */
+  function resetKeys() {
+      Object.keys(pressedKeys).forEach(key => {
+          pressedKeys[key] = false; // Set all keys as released
+      });
 
-  window.addEventListener('blur', function() {
-    pressedKeys = {};
-    // Reset all key visuals when window loses focus
-    var keys = document.getElementsByClassName('key');
-    for (var i = 0; i < keys.length; i++) {
-      keys[i].classList.remove('pressed');
-    }
-  });
+      // Reset all key visuals
+      const keys = document.getElementsByClassName('key');
+      Array.from(keys).forEach(key => key.classList.remove('pressed'));
+  }
 
+  // Expose input functions to the global scope
   window.input = {
-    isDown: function(key) {
-      return pressedKeys[key.toUpperCase()];
-    },
-    reset: function() {
-      pressedKeys['RUN'] = false;
-      pressedKeys['LEFT'] = false;
-      pressedKeys['RIGHT'] = false;
-      pressedKeys['DOWN'] = false;
-      pressedKeys['JUMP'] = false;
-      // Reset all key visuals when controls are reset
-      var keys = document.getElementsByClassName('key');
-      for (var i = 0; i < keys.length; i++) {
-        keys[i].classList.remove('pressed');
+      /**
+       * Checks if a specific key is currently pressed
+       * @param {string} key - The key to check
+       * @returns {boolean} - True if the key is pressed, false otherwise
+       */
+      isDown(key) {
+          return pressedKeys[key.toUpperCase()] || false; // Return pressed status or false
+      },
+
+      /**
+       * Resets all key states and visuals
+       */
+      reset() {
+          resetKeys(); // Call reset function
       }
-    }
   };
 })();

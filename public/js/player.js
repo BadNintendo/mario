@@ -1,138 +1,191 @@
-(function() {
-	if (typeof Mario === 'undefined')
-		window.Mario = {};
+// Mario Player Module
+(function () {
+    // Ensure the Mario namespace is defined
+    if (typeof Mario === 'undefined') window.Mario = {};
 
-	var Player = Mario.Player = function(pos) {
-		//I know, I know, there are a lot of variables tracking Mario's state.
-		//Maybe these can be consolidated some way? We'll see once they're all in.
-		this.power = 0;
-		this.coins = 0;
-		this.powering = [];
-		this.bounce = false;
-		this.jumping = 0;
-		this.canJump = true;
-		this.invincibility = 0;
-		this.crouching = false;
-		this.fireballs = 0;
-		this.runheld = false;
-		this.noInput = false;
-		this.targetPos = [];
+	 /**
+     * Sprite Size Details:
+     * The player sprite uses a 16x16 pixel size for individual frames.
+     * The sprite sheet 'sprites/player.png' contains various animations:
+     * - Small Mario: 16x16 pixels
+     * - Big Mario: 16x16 pixels (scaled)
+     * - Fire Mario: 16x16 pixels (scaled)
+     * This size should be used consistently for any sprite design to ensure proper alignment.
+     */
 
-		Mario.Entity.call(this, {
-			pos: pos,
-			sprite: new Mario.Sprite('sprites/player.png', [80,32],[16,16],0),
-			hitbox: [0,0,16,16]
-		});
-	};
+    /**
+     * Represents the Player in the game
+     * @constructor
+     * @param {Array<number>} pos - Initial position of the player in the format [x, y].
+     */
+    Player = Mario.Player = function (pos) {
+        // Player's state variables
+        this.power = 0;            // Current power level (0: small, 1: big, 2: fire)
+        this.coins = 0;            // Number of coins collected
+        this.powering = [];        // Power-ups currently active
+        this.bounce = false;       // Bounce state
+        this.jumping = 0;          // Jumping state counter
+        this.canJump = true;       // Indicates if the player can jump
+        this.invincibility = 0;    // Duration of invincibility
+        this.crouching = false;    // Crouching state
+        this.fireballs = 0;        // Number of fireballs available
+        this.runheld = false;      // Indicates if the run key is held
+        this.noInput = false;      // Indicates if the player is not accepting input
+        this.targetPos = [];       // Target position for movement
 
-	Mario.Util.inherits(Player, Mario.Entity);
+        // Call the parent Entity constructor
+        Mario.Entity.call(this, {
+            pos: pos,
+            sprite: new Mario.Sprite('sprites/player.png', [80, 32], [16, 16], 0),
+            hitbox: [0, 0, 16, 16]
+        });
+    };
 
-	Player.prototype.run = function() {
-		this.maxSpeed = 2.5;
-		if (this.power == 2 && !this.runheld) {
-			this.shoot();
-		}
-		this.runheld = true;
-	}
+    // Inherit from Mario.Entity
+    Mario.Util.inherits(Player, Mario.Entity);
 
-	Player.prototype.shoot = function() {
-		if (this.fireballs >= 2) return; //Projectile limit!
-		this.fireballs += 1;
-		var fb = new Mario.Fireball([this.pos[0]+8,this.pos[1]]); //I hate you, Javascript.
-		fb.spawn(this.left);
-		this.shooting = 2;
-	}
+    /**
+     * Enables running state for the player
+     */
+    Player.prototype.run = function () {
+        this.maxSpeed = 2.5; // Set maximum speed for running
+        if (this.power === 2 && !this.runheld) { // Check for fire power
+            this.shoot(); // Trigger shooting action
+        }
+        this.runheld = true; // Set runheld flag
+    };
 
-	Player.prototype.noRun = function() {
-		this.maxSpeed = 1.5;
-		this.moveAcc = 0.07;
-		this.runheld = false;
-	}
+    /**
+     * Triggers shooting a fireball
+     */
+    Player.prototype.shoot = function () {
+        if (this.fireballs >= 2) return; // Limit to 2 fireballs
+        this.fireballs += 1; // Increment fireball count
+        var fb = new Mario.Fireball([this.pos[0] + 8, this.pos[1]]); // Create a fireball
+        fb.spawn(this.left); // Spawn the fireball
+        this.shooting = 2; // Set shooting state
+    };
 
-	Player.prototype.moveRight = function() {
-		//we're on the ground
-		if (this.vel[1] === 0 && this.standing) {
-			if (this.crouching) {
-				this.noWalk();
-				return;
-			}
-			this.acc[0] = this.moveAcc;
-			this.left = false;
-		} else {
-			this.acc[0] = this.moveAcc;
-		}
-	};
+    /**
+     * Disables running state for the player
+     */
+    Player.prototype.noRun = function () {
+        this.maxSpeed = 1.5; // Set maximum speed for normal movement
+        this.moveAcc = 0.07; // Set movement acceleration
+        this.runheld = false; // Reset runheld flag
+    };
 
-	Player.prototype.moveLeft = function() {
-		if (this.vel[1] === 0 && this.standing) {
-			if (this.crouching) {
-				this.noWalk();
-				return;
-			}
-			this.acc[0] = -this.moveAcc;
-			this.left = true;
-		} else {
-			this.acc[0] = -this.moveAcc;
-		}
-	};
+    /**
+     * Moves the player to the right
+     */
+    Player.prototype.moveRight = function () {
+        // Check if on the ground
+        if (this.vel[1] === 0 && this.standing) {
+            if (this.crouching) { // If crouching, disable walking
+                this.noWalk();
+                return;
+            }
+            this.acc[0] = this.moveAcc; // Set acceleration for right movement
+            this.left = false; // Indicate direction
+        } else {
+            this.acc[0] = this.moveAcc; // Maintain right acceleration
+        }
+    };
 
-	Player.prototype.noWalk = function() {
-		this.maxSpeed = 0;
-		if (this.vel[0] === 0) return;
+    /**
+     * Moves the player to the left
+     */
+    Player.prototype.moveLeft = function () {
+        if (this.vel[1] === 0 && this.standing) {
+            if (this.crouching) { // If crouching, disable walking
+                this.noWalk();
+                return;
+            }
+            this.acc[0] = -this.moveAcc; // Set acceleration for left movement
+            this.left = true; // Indicate direction
+        } else {
+            this.acc[0] = -this.moveAcc; // Maintain left acceleration
+        }
+    };
 
-		if (Math.abs(this.vel[0]) <= 0.1) {
-			this.vel[0] = 0;
-			this.acc[0] = 0;
-		}
+    /**
+     * Stops player movement when not walking
+     */
+    Player.prototype.noWalk = function () {
+        this.maxSpeed = 0; // Set max speed to 0
+        if (this.vel[0] === 0) return; // Exit if already stopped
 
-	};
+        // Slow down the player
+        if (Math.abs(this.vel[0]) <= 0.1) {
+            this.vel[0] = 0; // Stop horizontal velocity
+            this.acc[0] = 0; // Reset acceleration
+        }
+    };
 
-	Player.prototype.crouch = function() {
-		if (this.power === 0) {
-			this.crouching = false;
-			return;
-		}
+    /**
+     * Makes the player crouch
+     */
+    Player.prototype.crouch = function () {
+        if (this.power === 0) { // If no power, cannot crouch
+            this.crouching = false;
+            return;
+        }
+        if (this.standing) this.crouching = true; // Crouch if standing
+    };
 
-		if (this.standing) this.crouching = true;
-	}
+    /**
+     * Stops the crouching state
+     */
+    Player.prototype.noCrouch = function () {
+        this.crouching = false; // Reset crouching state
+    };
 
-	Player.prototype.noCrouch = function() {
-		this.crouching = false;
-	}
+    /**
+     * Executes the jump action
+     */
+    Player.prototype.jump = function () {
+        if (this.vel[1] > 0) { // Prevent jumping while falling
+            return;
+        }
+        if (this.jumping) {
+            this.jumping -= 1; // Reduce jump counter if already jumping
+        } else if (this.standing && this.canJump) {
+            this.jumping = 20; // Set jump state
+            this.canJump = false; // Prevent further jumps
+            this.standing = false; // Mark player as not standing
+            this.vel[1] = -6; // Set upward velocity
 
-	Player.prototype.jump = function() {
-		if (this.vel[1] > 0) {
-			return;
-		}
-		if (this.jumping) {
-			this.jumping -= 1;
-		} else if (this.standing && this.canJump) {
-			this.jumping = 20;
-			this.canJump = false;
-			this.standing = false;
-			this.vel[1] = -6;
-			if (this.power === 0) {
-				sounds.smallJump.currentTime = 0;
-				sounds.smallJump.play();
-			} else {
-				sounds.bigJump.currentTime = 0;
-				sounds.bigJump.play();
-			}
-		}
-	};
+            // Play jump sound based on power level
+            if (this.power === 0) {
+                sounds.smallJump.currentTime = 0; // Reset sound
+                sounds.smallJump.play(); // Play small jump sound
+            } else {
+                sounds.bigJump.currentTime = 0; // Reset sound
+                sounds.bigJump.play(); // Play big jump sound
+            }
+        }
+    };
 
-	Player.prototype.noJump = function() {
-		this.canJump = true;
-		if (this.jumping) {
-			if (this.jumping <= 16) {
-				this.vel[1] = 0;
-				this.jumping = 0;
-			} else this.jumping -= 1;
-		}
-	};
+    /**
+     * Executes the actions needed when the jump is released
+     */
+    Player.prototype.noJump = function () {
+        this.canJump = true; // Allow jumping again
+        if (this.jumping) {
+            if (this.jumping <= 16) {
+                this.vel[1] = 0; // Stop upward velocity
+                this.jumping = 0; // Reset jump counter
+            } else {
+                this.jumping -= 1; // Decrease jump counter
+            }
+        }
+    };
 
-  Player.prototype.setAnimation = function() {
-		if (this.dying) return;
+    /**
+     * Updates the player's animation based on the current state
+     */
+    Player.prototype.setAnimation = function () {
+        if (this.dying) return; // Exit if player is dying
 
 		if (this.starTime) {
 			var index;
