@@ -202,15 +202,15 @@ var oneone = Mario.oneone = function() {
   level.putGoomba(82, 4);
   level.putGoomba(84, 4);
   level.putGoomba(100, 12);
-  level.putGoomba(102, 12);
+  level.putGoomba(108, 12);
   level.putGoomba(114, 12);
-  level.putGoomba(115, 12);
+  level.putGoomba(120, 12);
   level.putGoomba(122, 12);
-  level.putGoomba(123, 12);
+  level.putGoomba(128, 12);
   level.putGoomba(125, 12);
-  level.putGoomba(126, 12);
+  level.putGoomba(133, 12);
   level.putGoomba(170, 12);
-  level.putGoomba(172, 12);
+  level.putGoomba(178, 12);
   level.putKoopa(35, 11);
 
   music.underground.pause();
